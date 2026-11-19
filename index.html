@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UP Idea Lab</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --panel2:#1e2739; --line:#2b3650;
+    --text:#e9eef7; --muted:#9aa7bf; --accent:#ffb020; --accent2:#3ad1a6;
+    --e:#ff6b6b; --p:#4da3ff;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+  header{padding:28px 20px 18px;max-width:1150px;margin:0 auto;display:flex;gap:16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em}
+  h1 span{color:var(--accent)}
+  .tag{color:var(--muted);margin:4px 0 0}
+  .mode{font-size:.8rem;padding:6px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  .mode b{color:var(--accent2)}
+  main{max-width:1150px;margin:0 auto;padding:0 20px 40px;display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:22px}
+  @media (max-width:860px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  h2{margin:0 0 12px;font-size:1.15rem}
+  label{display:block;font-weight:600;font-size:.92rem;margin:14px 0 6px}
+  .hint{font-weight:400;color:var(--muted);font-size:.82rem}
+  input[type=text],textarea,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit}
+  textarea{min-height:84px;resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:11px 16px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#1a1200;width:100%;margin-top:18px;font-size:1rem}
+  .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .btn.danger{background:transparent;color:var(--e);border:1px solid var(--e)}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .msg{margin-top:12px;font-size:.9rem;min-height:1.2em}
+  .msg.ok{color:var(--accent2)} .msg.err{color:var(--e)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  .toolbar input{flex:1;min-width:160px}
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .filters button{padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:.82rem}
+  .filters button.on{color:var(--text);border-color:var(--accent)}
+  .count{color:var(--muted);font-size:.85rem;margin-left:auto}
+  .wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+  .card h3{margin:0;font-size:1rem}
+  .card p{margin:0;color:#cfd7e6;font-size:.9rem;white-space:pre-wrap;word-wrap:break-word}
+  .card .lbl{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+  .pills{display:flex;flex-wrap:wrap;gap:5px}
+  .pill{font-size:.72rem;padding:3px 8px;border-radius:999px;font-weight:700;color:#0f1420;background:var(--p)}
+  .empty{color:var(--muted);text-align:center;padding:40px 10px;border:1px dashed var(--line);border-radius:12px}
+  .teacher{margin-top:22px;border-top:1px dashed var(--line);padding-top:16px}
+  .teacher .btns{display:flex;flex-wrap:wrap;gap:8px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  footer{max-width:1150px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>UP <span>Idea Lab</span></h1>
+    <p class="tag">Unlocking Potential 2027 — what should we build, make, visit or compete in?</p>
+  </div>
+  <div class="mode" id="modeBadge">Mode: <b>…</b></div>
+</header>
+
+<main>
+  <!-- ===== Idea form ===== -->
+  <section class="panel" aria-labelledby="formTitle">
+    <h2 id="formTitle">Pitch an idea</h2>
+    <form id="ideaForm" novalidate>
+      <label for="title">Project title</label>
+      <input type="text" id="title" maxlength="80" placeholder="e.g. Sound-reactive hallway lights" required>
+
+      <label for="audience">Who it’s for <span class="hint">Who would use, see or buy it?</span></label>
+      <textarea id="audience" maxlength="400" placeholder="e.g. students walking past the library at lunch" required></textarea>
+
+      <label for="needed">What’s needed <span class="hint">Kit, materials, space, people</span></label>
+      <textarea id="needed" maxlength="600" placeholder="e.g. ESP32, microphone sensor, LED strip, 3D-printed case" required></textarea>
+
+      <label for="timeline">Approximate timeline</label>
+      <select id="timeline" required>
+        <option value="">Choose…</option>
+        <option>1–2 weeks</option><option>3–5 weeks</option><option>About a term</option>
+        <option>About a semester</option><option>Whole year</option>
+      </select>
+
+      <label for="learn">What you need to learn <span class="hint">New skills to make it happen</span></label>
+      <textarea id="learn" maxlength="600" placeholder="e.g. how to read a sound sensor, soldering, WLED effects" required></textarea>
+
+      <button class="btn primary" type="submit" id="submitBtn">Submit idea</button>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <!-- ===== Idea wall ===== -->
+  <section class="panel" aria-labelledby="wallTitle">
+    <h2 id="wallTitle">Idea wall</h2>
+    <div class="toolbar">
+      <label for="search" class="sr">Search ideas</label>
+      <input type="text" id="search" placeholder="Search ideas…">
+      <button class="btn ghost" type="button" id="refreshBtn" title="Reload ideas">↻ Refresh</button>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="wall" id="wall"></div>
+
+    <div class="teacher" id="teacherPanel" hidden>
+      <h2>Teacher tools</h2>
+      <p class="hint" id="teacherHint"></p>
+      <div class="btns">
+        <button class="btn ghost" type="button" id="csvBtn">⬇ Download .csv</button>
+        <button class="btn ghost" type="button" id="mdBtn">⬇ Download .md</button>
+        <button class="btn danger" type="button" id="clearBtn">Clear ideas on this device</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Ideas are anonymous — don’t put names or personal details in your answers. Ideas are shared with the UP class and teachers.
+</footer>
+
+<script>
+/* =========================================================
+   SETTINGS
+   Paste your Google Apps Script web app URL below to collect
+   ideas from every device into one Google Sheet.
+   Leave it empty ("") and ideas are saved on this device only
+   (good for a single shared laptop / kiosk).
+   ========================================================= */
+const SCRIPT_URL = "";
+
+/* Teacher tools appear when the page URL ends with ?teacher  */
+const TEACHER = new URLSearchParams(location.search).has("teacher");
+const LOCAL_KEY = "up-idea-lab-v1";
+const SHARED = SCRIPT_URL.trim() !== "";
+const FIELDS = ["timestamp","title","audience","needed","timeline","learn"];
+const HEAD = ["Timestamp","Project title","Who it's for","What's needed","Approximate timeline","What you need to learn"];
+
+let ideas = [];
+let filter = "All";
+
+const $ = id => document.getElementById(id);
+$("modeBadge").innerHTML = SHARED
+  ? 'Mode: <b>shared</b> (saves to class sheet)'
+  : 'Mode: <b>this device</b>';
+
+/* ---------- storage ---------- */
+function loadLocal(){
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveLocal(list){
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+
+async function fetchIdeas(){
+  if (!SHARED){ ideas = loadLocal(); return; }
+  const r = await fetch(SCRIPT_URL + "?action=list&t=" + Date.now());
+  if (!r.ok) throw new Error("Could not load ideas (" + r.status + ")");
+  const data = await r.json();
+  ideas = Array.isArray(data.ideas) ? data.ideas : [];
+}
+
+async function saveIdea(item){
+  if (!SHARED){
+    const list = loadLocal(); list.push(item);
+    if (!saveLocal(list)) throw new Error("This browser blocked saving. Ask your teacher.");
+    return;
+  }
+  // text/plain avoids a CORS preflight, which Apps Script can't answer
+  const r = await fetch(SCRIPT_URL, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(item)
+  });
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok || data.ok === false) throw new Error(data.error || "Save failed");
+}
+
+/* ---------- form ---------- */
+$("ideaForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const msg = $("msg");
+  const item = { timestamp: new Date().toISOString() };
+  FIELDS.slice(1).forEach(f => item[f] = $(f).value.trim());
+  const labels = {title:"a project title", audience:"who it's for", needed:"what's needed", timeline:"a timeline", learn:"what you need to learn"};
+  const missing = FIELDS.slice(1).filter(f => !item[f]).map(f => labels[f]);
+  if(missing.length){ msg.className="msg err"; msg.textContent="Please add " + missing.join(", ") + "."; return; }
+
+  const btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  try{
+    await saveIdea(item);
+    msg.className="msg ok"; msg.textContent="Idea saved — thanks!";
+    $("ideaForm").reset();
+    await refresh();
+  }catch(err){
+    msg.className="msg err"; msg.textContent=err.message;
+  }finally{
+    btn.disabled=false; btn.textContent="Submit idea";
+  }
+});
+
+/* ---------- wall ---------- */
+const TIMELINES = ["All","1–2 weeks","3–5 weeks","About a term","About a semester","Whole year"];
+function drawFilters(){
+  $("filters").innerHTML = "";
+  TIMELINES.forEach(s=>{
+    const b = document.createElement("button");
+    b.type="button"; b.textContent=s; b.className = s===filter ? "on":"";
+    b.onclick=()=>{ filter=s; drawFilters(); drawWall(); };
+    $("filters").appendChild(b);
+  });
+  const c = document.createElement("span"); c.className="count"; c.id="count";
+  $("filters").appendChild(c);
+}
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function drawWall(){
+  const q = $("search").value.toLowerCase();
+  const list = ideas
+    .filter(i => filter==="All" || i.timeline===filter)
+    .filter(i => !q || FIELDS.some(f => String(i[f]||"").toLowerCase().includes(q)))
+    .slice().reverse();
+  $("count").textContent = list.length + " of " + ideas.length + " ideas";
+  if(!list.length){
+    $("wall").innerHTML = '<div class="empty">' + (ideas.length ? "No ideas match." : "No ideas yet — be the first!") + '</div>';
+    return;
+  }
+  $("wall").innerHTML = list.map(i=>`<article class="card">
+      <div class="pills"><span class="pill">${esc(i.timeline)}</span></div>
+      <h3>${esc(i.title)}</h3>
+      <div><div class="lbl">Who it’s for</div><p>${esc(i.audience)}</p></div>
+      <div><div class="lbl">What’s needed</div><p>${esc(i.needed)}</p></div>
+      <div><div class="lbl">What we need to learn</div><p>${esc(i.learn)}</p></div>
+    </article>`).join("");
+}
+
+async function refresh(){
+  try{ await fetchIdeas(); }
+  catch(err){ $("msg").className="msg err"; $("msg").textContent=err.message; }
+  drawWall();
+}
+$("search").addEventListener("input", drawWall);
+$("refreshBtn").addEventListener("click", refresh);
+
+/* ---------- exports ---------- */
+function download(name, text, type){
+  const blob = new Blob([text], {type});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function stamp(){ return new Date().toLocaleDateString("en-CA"); }
+
+function toCSV(){
+  const cell = v => {
+    let s = String(v ?? "");
+    if (/^[=+\-@]/.test(s)) s = "'" + s;   // stop spreadsheet formula injection
+    return '"' + s.replace(/"/g,'""') + '"';
+  };
+  const rows = [HEAD.map(cell).join(",")].concat(ideas.map(i => FIELDS.map(f=>cell(i[f])).join(",")));
+  return "﻿" + rows.join("\r\n");   // BOM so Excel reads UTF-8
+}
+
+function toMD(){
+  const one = s => String(s||"").replace(/\r?\n+/g," ").trim();
+  let md = `---\ntype: student-ideas\nprogram: UP 2027\nexported: ${stamp()}\ncount: ${ideas.length}\ntags: [UP, ideas]\n---\n\n# UP Idea Lab — student ideas\n\nExported ${stamp()} · ${ideas.length} ideas (anonymous).\n`;
+  ideas.forEach(i=>{
+    md += `\n## ${one(i.title)}\n`;
+    md += `- **Who it's for:** ${one(i.audience)}\n`;
+    md += `- **What's needed:** ${one(i.needed)}\n`;
+    md += `- **Approximate timeline:** ${one(i.timeline)}\n`;
+    md += `- **What we need to learn:** ${one(i.learn)}\n`;
+  });
+  return md;
+}
+
+$("csvBtn").onclick = async ()=>{ await refresh(); download(`UP-ideas-${stamp()}.csv`, toCSV(), "text/csv;charset=utf-8"); };
+$("mdBtn").onclick  = async ()=>{ await refresh(); download(`UP-ideas-${stamp()}.md`,  toMD(),  "text/markdown;charset=utf-8"); };
+$("clearBtn").onclick = ()=>{
+  if (SHARED){ $("teacherHint").textContent = "Shared mode: delete rows in the Google Sheet instead."; return; }
+  if (!confirm("Delete all ideas saved on this device? Download them first!")) return;
+  saveLocal([]); refresh();
+};
+
+/* ---------- start ---------- */
+if (TEACHER){
+  $("teacherPanel").hidden = false;
+  $("teacherHint").textContent = SHARED
+    ? "Exports include every idea in the class Google Sheet."
+    : "Exports include ideas saved in this browser only.";
+}
+drawFilters();
+refresh();
+</script>
+</body>
+</html>
