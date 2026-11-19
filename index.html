@@ -52,6 +52,14 @@
   .teacher{margin-top:22px;border-top:1px dashed var(--line);padding-top:16px}
   .teacher .btns{display:flex;flex-wrap:wrap;gap:8px}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .review{max-width:1150px;margin:0 auto 30px;padding:0 20px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;max-height:70vh}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--panel2);position:sticky;top:0;cursor:pointer;white-space:nowrap;user-select:none}
+  td{white-space:pre-wrap;word-wrap:break-word;max-width:260px}
+  tr.off td{opacity:.4}
+  .x{background:none;border:0;color:var(--e);cursor:pointer;font-size:1rem}
   footer{max-width:1150px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:.8rem}
 </style>
 </head>
@@ -104,18 +112,33 @@
     </div>
     <div class="filters" id="filters"></div>
     <div class="wall" id="wall"></div>
+  </section>
+</main>
 
-    <div class="teacher" id="teacherPanel" hidden>
-      <h2>Teacher tools</h2>
-      <p class="hint" id="teacherHint"></p>
+<div class="review" id="teacherPanel" hidden>
+  <section class="panel" aria-labelledby="reviewTitle">
+    <h2 id="reviewTitle">Teacher review</h2>
+    <p class="hint" id="teacherHint"></p>
+    <div class="toolbar">
+      <button class="btn ghost" type="button" id="allBtn">Select all</button>
+      <button class="btn ghost" type="button" id="noneBtn">Select none</button>
+      <span class="count" id="selCount"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="teacher">
       <div class="btns">
-        <button class="btn ghost" type="button" id="csvBtn">⬇ Download .csv</button>
-        <button class="btn ghost" type="button" id="mdBtn">⬇ Download .md</button>
+        <button class="btn ghost" type="button" id="csvBtn">⬇ Download selected as .csv</button>
+        <button class="btn ghost" type="button" id="mdBtn">⬇ Download selected as .md</button>
         <button class="btn danger" type="button" id="clearBtn">Clear ideas on this device</button>
       </div>
     </div>
   </section>
-</main>
+</div>
 
 <footer>
   Ideas are anonymous — don’t put names or personal details in your answers. Ideas are shared with the UP class and teachers.
@@ -140,6 +163,9 @@ const HEAD = ["Timestamp","Project title","Who it's for","What's needed","Approx
 
 let ideas = [];
 let filter = "All";
+let skip = new Set();              // timestamps the teacher has unticked
+let sortKey = "timestamp", sortDir = -1;
+const selected = () => ideas.filter(i => !skip.has(i.timestamp));
 
 const $ = id => document.getElementById(id);
 $("modeBadge").innerHTML = SHARED
@@ -243,7 +269,46 @@ async function refresh(){
   try{ await fetchIdeas(); }
   catch(err){ $("msg").className="msg err"; $("msg").textContent=err.message; }
   drawWall();
+  drawTable();
 }
+
+/* ---------- teacher review table ---------- */
+const COLS = [["timestamp","Submitted"],["title","Project title"],["audience","Who it’s for"],["needed","What’s needed"],["timeline","Timeline"],["learn","What to learn"]];
+function when(t){ const d = new Date(t); return isNaN(d) ? t : d.toLocaleString("en-AU",{dateStyle:"short",timeStyle:"short"}); }
+function drawTable(){
+  if (!TEACHER) return;
+  $("thead").innerHTML = "<th>✓</th>" + COLS.map(([k,l]) =>
+    `<th data-k="${k}">${l}${k===sortKey ? (sortDir>0 ? " ▲" : " ▼") : ""}</th>`).join("") + (SHARED ? "" : "<th></th>");
+  const rows = ideas.slice().sort((a,b) => String(a[sortKey]||"").localeCompare(String(b[sortKey]||"")) * sortDir);
+  $("tbody").innerHTML = rows.length ? rows.map(i => {
+    const on = !skip.has(i.timestamp);
+    return `<tr class="${on ? "" : "off"}">
+      <td><input type="checkbox" data-t="${esc(i.timestamp)}" ${on ? "checked" : ""} aria-label="Include in download"></td>
+      <td>${esc(when(i.timestamp))}</td>
+      ${COLS.slice(1).map(([k]) => `<td>${esc(i[k])}</td>`).join("")}
+      ${SHARED ? "" : `<td><button class="x" type="button" data-del="${esc(i.timestamp)}" title="Delete this idea">✕</button></td>`}
+    </tr>`;
+  }).join("") : `<tr><td colspan="8">No ideas yet.</td></tr>`;
+  $("selCount").textContent = selected().length + " of " + ideas.length + " selected for download";
+}
+$("thead").addEventListener("click", e => {
+  const th = e.target.closest("th[data-k]"); if (!th) return;
+  if (sortKey === th.dataset.k) sortDir = -sortDir; else { sortKey = th.dataset.k; sortDir = 1; }
+  drawTable();
+});
+$("tbody").addEventListener("change", e => {
+  const t = e.target.dataset.t; if (!t) return;
+  e.target.checked ? skip.delete(t) : skip.add(t);
+  drawTable();
+});
+$("tbody").addEventListener("click", e => {
+  const t = e.target.dataset.del; if (!t) return;
+  if (!confirm("Delete this idea from this device?")) return;
+  saveLocal(loadLocal().filter(i => i.timestamp !== t)); refresh();
+});
+$("allBtn").onclick = () => { skip.clear(); drawTable(); };
+$("noneBtn").onclick = () => { skip = new Set(ideas.map(i => i.timestamp)); drawTable(); };
+
 $("search").addEventListener("input", drawWall);
 $("refreshBtn").addEventListener("click", refresh);
 
@@ -263,14 +328,15 @@ function toCSV(){
     if (/^[=+\-@]/.test(s)) s = "'" + s;   // stop spreadsheet formula injection
     return '"' + s.replace(/"/g,'""') + '"';
   };
-  const rows = [HEAD.map(cell).join(",")].concat(ideas.map(i => FIELDS.map(f=>cell(i[f])).join(",")));
+  const rows = [HEAD.map(cell).join(",")].concat(selected().map(i => FIELDS.map(f=>cell(i[f])).join(",")));
   return "﻿" + rows.join("\r\n");   // BOM so Excel reads UTF-8
 }
 
 function toMD(){
   const one = s => String(s||"").replace(/\r?\n+/g," ").trim();
-  let md = `---\ntype: student-ideas\nprogram: UP 2027\nexported: ${stamp()}\ncount: ${ideas.length}\ntags: [UP, ideas]\n---\n\n# UP Idea Lab — student ideas\n\nExported ${stamp()} · ${ideas.length} ideas (anonymous).\n`;
-  ideas.forEach(i=>{
+  const list = selected();
+  let md = `---\ntype: student-ideas\nprogram: UP 2027\nexported: ${stamp()}\ncount: ${list.length}\ntags: [UP, ideas]\n---\n\n# UP Idea Lab — student ideas\n\nExported ${stamp()} · ${list.length} ideas (anonymous).\n`;
+  list.forEach(i=>{
     md += `\n## ${one(i.title)}\n`;
     md += `- **Who it's for:** ${one(i.audience)}\n`;
     md += `- **What's needed:** ${one(i.needed)}\n`;
@@ -292,8 +358,8 @@ $("clearBtn").onclick = ()=>{
 if (TEACHER){
   $("teacherPanel").hidden = false;
   $("teacherHint").textContent = SHARED
-    ? "Exports include every idea in the class Google Sheet."
-    : "Exports include ideas saved in this browser only.";
+    ? "Every idea in the class Google Sheet. Untick any you don’t want, click a heading to sort, then download."
+    : "Showing ideas saved in this browser only. To see every student’s ideas here, connect the Google Sheet (see Code.gs). Untick any you don’t want, then download.";
 }
 drawFilters();
 refresh();
