@@ -182,24 +182,19 @@ function saveLocal(list){
   catch(e){ return false; }
 }
 
-// JSONP call to the Apps Script web app (a <script> tag, so no CORS issues from GitHub Pages).
-function jsonp(params){
-  return new Promise((resolve, reject) => {
-    const cb = "upcb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
-    const s = document.createElement("script");
-    const fail = () => done(new Error("Couldn’t reach the class idea sheet. Check your internet connection, then click Refresh."));
-    const timer = setTimeout(fail, 12000);
-    function done(err, data){ clearTimeout(timer); delete window[cb]; s.remove(); err ? reject(err) : resolve(data); }
-    window[cb] = data => done(null, data);
-    s.onerror = fail;
-    s.src = SCRIPT_URL + "?" + new URLSearchParams(Object.assign({}, params, { callback: cb, t: Date.now() }));
-    document.body.appendChild(s);
-  });
+// Calls the Apps Script web app. credentials:"omit" keeps Google sign-ins out of the
+// request, so it works the same whether or not (or how many times) someone is signed in.
+async function api(params){
+  let r;
+  try { r = await fetch(SCRIPT_URL + "?" + new URLSearchParams(Object.assign({}, params, { t: Date.now() })), { credentials: "omit" }); }
+  catch (e) { throw new Error("Couldn’t reach the class idea sheet. Check your internet connection, then click Refresh."); }
+  if (!r.ok) throw new Error("The class idea sheet didn’t respond (" + r.status + "). Try Refresh.");
+  return r.json();
 }
 
 async function fetchIdeas(){
   if (!SHARED){ ideas = loadLocal(); return; }
-  const data = await jsonp({ action: "list" });
+  const data = await api({ action: "list" });
   if (data.ok === false) throw new Error(data.error || "Could not load ideas");
   ideas = Array.isArray(data.ideas) ? data.ideas : [];
 }
@@ -210,7 +205,7 @@ async function saveIdea(item){
     if (!saveLocal(list)) throw new Error("This browser blocked saving. Ask your teacher.");
     return;
   }
-  const data = await jsonp(Object.assign({ action: "add" }, item));
+  const data = await api(Object.assign({ action: "add" }, item));
   if (data.ok === false) throw new Error(data.error || "Save failed");
 }
 
