@@ -152,7 +152,7 @@
    Leave it empty ("") and ideas are saved on this device only
    (good for a single shared laptop / kiosk).
    ========================================================= */
-const SCRIPT_URL = "";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbZQCWiG2PojHEPmGtMYr6gNDjDp9W3X50j95glRrGsVetOl8p5BFt7B84scG_PY-WtA/exec";
 
 /* Teacher tools appear when the page URL ends with ?teacher  */
 const TEACHER = new URLSearchParams(location.search).has("teacher");
@@ -182,11 +182,25 @@ function saveLocal(list){
   catch(e){ return false; }
 }
 
+// JSONP call to the Apps Script web app (a <script> tag, so no CORS issues from GitHub Pages).
+function jsonp(params){
+  return new Promise((resolve, reject) => {
+    const cb = "upcb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+    const s = document.createElement("script");
+    const fail = () => done(new Error("Couldn’t reach the class idea sheet. Check your internet connection, then click Refresh."));
+    const timer = setTimeout(fail, 12000);
+    function done(err, data){ clearTimeout(timer); delete window[cb]; s.remove(); err ? reject(err) : resolve(data); }
+    window[cb] = data => done(null, data);
+    s.onerror = fail;
+    s.src = SCRIPT_URL + "?" + new URLSearchParams(Object.assign({}, params, { callback: cb, t: Date.now() }));
+    document.body.appendChild(s);
+  });
+}
+
 async function fetchIdeas(){
   if (!SHARED){ ideas = loadLocal(); return; }
-  const r = await fetch(SCRIPT_URL + "?action=list&t=" + Date.now());
-  if (!r.ok) throw new Error("Could not load ideas (" + r.status + ")");
-  const data = await r.json();
+  const data = await jsonp({ action: "list" });
+  if (data.ok === false) throw new Error(data.error || "Could not load ideas");
   ideas = Array.isArray(data.ideas) ? data.ideas : [];
 }
 
@@ -196,14 +210,8 @@ async function saveIdea(item){
     if (!saveLocal(list)) throw new Error("This browser blocked saving. Ask your teacher.");
     return;
   }
-  // text/plain avoids a CORS preflight, which Apps Script can't answer
-  const r = await fetch(SCRIPT_URL, {
-    method:"POST",
-    headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body: JSON.stringify(item)
-  });
-  const data = await r.json().catch(()=>({}));
-  if (!r.ok || data.ok === false) throw new Error(data.error || "Save failed");
+  const data = await jsonp(Object.assign({ action: "add" }, item));
+  if (data.ok === false) throw new Error(data.error || "Save failed");
 }
 
 /* ---------- form ---------- */
